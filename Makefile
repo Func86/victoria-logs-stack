@@ -1,8 +1,12 @@
 HELM ?= helm
 CHART_DIR ?= charts/victoria-logs-stack
-CHART_VERSION ?= 0.1.0
+CHART_VERSION := $(shell sed -n 's/^version:[[:space:]]*//p' $(CHART_DIR)/Chart.yaml)
 DIST_DIR ?= dist
 OCI_REPOSITORY ?= oci://ghcr.io/func86/charts
+
+.PHONY: chart-version
+chart-version:
+	@printf '%s\n' "$(CHART_VERSION)"
 
 .PHONY: lint
 lint:
@@ -29,4 +33,5 @@ package: check
 
 .PHONY: publish
 publish: package
+	test -f $(DIST_DIR)/victoria-logs-stack-$(CHART_VERSION).tgz
 	$(HELM) push $(DIST_DIR)/victoria-logs-stack-$(CHART_VERSION).tgz $(OCI_REPOSITORY)

@@ -14,18 +14,33 @@ Deployment repositories own their namespaces, image pins, component
 configuration, resource sizing, Secrets, source Compose stacks, and migration
 runbooks. They consume a released chart version instead of a sibling checkout.
 
-## Validate and publish
+## Validate
 
 ```bash
 make check
 make package
-helm registry login ghcr.io
-make publish
 ```
 
-`Chart.yaml` and `CHART_VERSION` in the Makefile must be advanced together for
-each release. Published consumers pin an exact chart version and generate their
-`Chart.lock` with `helm dependency update`; lock files are never edited by hand.
+## Publish
+
+Update the version in `Chart.yaml`, commit it, and push an exactly matching tag:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The tag-triggered GitHub Actions workflow validates the chart and migration
+tool, verifies that the tag is `v<Chart.yaml version>`, and publishes with the
+repository's temporary `GITHUB_TOKEN`. No long-lived publishing token is
+required. A workflow-created package inherits the repository's visibility and
+permissions; confirm that the first package is public before converting the
+deployment repositories.
+
+For a manual publication, log in to GHCR and run `make publish`.
+
+Published consumers pin an exact chart version and generate their `Chart.lock`
+with `helm dependency update`; lock files are never edited by hand.
 
 The default target repository is:
 

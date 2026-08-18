@@ -1,0 +1,60 @@
+name: Publish Helm chart
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Install Helm
+        uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
+        with:
+          version: v4.2.2
+
+      - name: Verify release tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          chart_version="$(make --no-print-directory chart-version)"
+          expected_tag="v${chart_version}"
+          if [[ "$GITHUB_REF_NAME" != "$expected_tag" ]]; then
+            printf 'Tag %s does not match Chart.yaml version %s\n' \
+              "$GITHUB_REF_NAME" "$chart_version" >&2
+            exit 1
+          fi
+
+      - name: Validate and package chart
+        run: make package
+
+      - name: Log in to GHCR
+        shell: bash
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          printf '%s' "$GHCR_TOKEN" | helm registry login ghcr.io \
+            --username "$GITHUB_ACTOR" \
+            --password-stdin
+
+      - name: Publish chart
+        shell: bash
+        run: |
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          chart_version="$(make --no-print-directory chart-version)"
+          helm push "dist/victoria-logs-stack-${chart_version}.tgz" \
+            "oci://ghcr.io/${owner}/charts"
