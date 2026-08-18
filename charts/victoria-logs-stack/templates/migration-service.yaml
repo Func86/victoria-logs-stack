@@ -1,0 +1,21 @@
+{{- if .Values.migration.nodePort.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: victoria-logs-migration
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "victoria-logs-stack.commonLabels" . | nindent 4 }}
+    app.kubernetes.io/name: victoria-logs
+spec:
+  type: NodePort
+  externalTrafficPolicy: Local
+  selector:
+    app.kubernetes.io/name: victoria-logs
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    - name: http
+      port: 9428
+      targetPort: http
+      nodePort: {{ .Values.migration.nodePort.port }}
+{{- end }}

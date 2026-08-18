@@ -1,0 +1,58 @@
+scheduling:
+  nodeSelector: {}
+  tolerations: []
+
+victoriaLogs:
+  image: victoriametrics/victoria-logs:v1.52.0@sha256:47b820890d64c4575a2a0a46415dcd8a4fd59a0f1fcd6a377693d7aea639442e
+  imagePullPolicy: IfNotPresent
+  retentionPeriod: 30d
+  extraArgs: []
+  service:
+    port: 9428
+  storage:
+    size: 10Gi
+    storageClassName: local-retain
+  resources: {}
+
+vector:
+  enabled: false
+  image: timberio/vector:0.57.0-debian@sha256:e4fc19efb7f817f28d06a9a67fab9e1ccc60d57080115c291b06deb6daea7d7a
+  imagePullPolicy: IfNotPresent
+  replicas: 1
+  service:
+    port: 8686
+  apiPort: 8687
+  resources: {}
+  config: {}
+
+vmauth:
+  enabled: false
+  image: ""
+  imagePullPolicy: IfNotPresent
+  replicas: 1
+  service:
+    port: 8427
+  httpAuthHeaders: []
+  extraArgs: []
+  resources: {}
+  config: {}
+
+cloudflared:
+  enabled: true
+  image: cloudflare/cloudflared:2026.8.2@sha256:0aa26e284f05e6c77ae375b8c9c11d9eb6a448fb7bcd8d40f31cb6176189eb38
+  imagePullPolicy: IfNotPresent
+  replicas: 1
+  metricsPort: 8964
+  tokenSecretName: cloudflared-token
+  resources: {}
+
+migration:
+  nodePort:
+    enabled: false
+    port: 30428
+  helper:
+    enabled: false
+    image: busybox:1.38@sha256:dc2d74b28e4cf8984fa52af1f39bc7c3d9c73760b41a74d629f5d11b1ab28616
+    imagePullPolicy: IfNotPresent
+    claimName: victoria-logs-data-victoria-logs-0
+    resources: {}

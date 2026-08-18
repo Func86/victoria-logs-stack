@@ -1,0 +1,16 @@
+{{- if .Values.vector.enabled }}
+{{- if empty .Values.vector.config }}
+{{- fail "vector.config must be set when vector.enabled is true" }}
+{{- end }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vector-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "victoria-logs-stack.commonLabels" . | nindent 4 }}
+    app.kubernetes.io/name: vector
+data:
+  vector.yaml: |
+{{ toYaml .Values.vector.config | nindent 4 }}
+{{- end }}

@@ -1,0 +1,12 @@
+scheduling:
+  nodeSelector:
+    kubernetes.io/hostname: vmauth-test
+
+vmauth:
+  enabled: true
+  image: example.invalid/vmauth:test
+  httpAuthHeaders:
+    - Authorization
+  config:
+    unauthorized_user:
+      url_prefix: http://victoria-logs:9428

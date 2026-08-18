@@ -1,0 +1,97 @@
+{{- if .Values.vmauth.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: vmauth
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "victoria-logs-stack.commonLabels" . | nindent 4 }}
+    app.kubernetes.io/name: vmauth
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: vmauth
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    - name: http
+      port: {{ .Values.vmauth.service.port }}
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vmauth
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "victoria-logs-stack.commonLabels" . | nindent 4 }}
+    app.kubernetes.io/name: vmauth
+spec:
+  replicas: {{ .Values.vmauth.replicas }}
+  revisionHistoryLimit: 3
+  minReadySeconds: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vmauth
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: vmauth
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/part-of: victoria-logs
+      annotations:
+        checksum/vmauth-config: {{ include (print $.Template.BasePath "/vmauth-configmap.yaml") . | sha256sum }}
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: vmauth
+          image: {{ required "vmauth.image must be set when vmauth.enabled is true" .Values.vmauth.image }}
+          imagePullPolicy: {{ .Values.vmauth.imagePullPolicy }}
+          args:
+            - -auth.config=/etc/vmauth/vmauth.yml
+{{- range .Values.vmauth.httpAuthHeaders }}
+            - {{ printf "-httpAuthHeader=%s" . | quote }}
+{{- end }}
+{{- range .Values.vmauth.extraArgs }}
+            - {{ . | quote }}
+{{- end }}
+          ports:
+            - name: http
+              containerPort: 8427
+          startupProbe:
+            tcpSocket:
+              port: http
+            failureThreshold: 30
+            periodSeconds: 2
+            timeoutSeconds: 2
+          readinessProbe:
+            tcpSocket:
+              port: http
+            failureThreshold: 3
+            periodSeconds: 5
+            timeoutSeconds: 2
+          livenessProbe:
+            tcpSocket:
+              port: http
+            failureThreshold: 3
+            periodSeconds: 30
+            timeoutSeconds: 2
+          resources:
+{{ toYaml .Values.vmauth.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/vmauth/vmauth.yml
+              subPath: vmauth.yml
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: vmauth-config
+{{- include "victoria-logs-stack.scheduling" . | nindent 6 }}
+{{- end }}

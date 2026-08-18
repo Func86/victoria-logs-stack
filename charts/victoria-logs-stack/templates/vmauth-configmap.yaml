@@ -1,0 +1,16 @@
+{{- if .Values.vmauth.enabled }}
+{{- if empty .Values.vmauth.config }}
+{{- fail "vmauth.config must be set when vmauth.enabled is true" }}
+{{- end }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vmauth-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "victoria-logs-stack.commonLabels" . | nindent 4 }}
+    app.kubernetes.io/name: vmauth
+data:
+  vmauth.yml: |
+{{ toYaml .Values.vmauth.config | nindent 4 }}
+{{- end }}

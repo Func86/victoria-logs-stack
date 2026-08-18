@@ -1,0 +1,75 @@
+{{- if .Values.cloudflared.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudflared
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "victoria-logs-stack.commonLabels" . | nindent 4 }}
+    app.kubernetes.io/name: cloudflared
+spec:
+  replicas: {{ .Values.cloudflared.replicas }}
+  revisionHistoryLimit: 3
+  minReadySeconds: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cloudflared
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cloudflared
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/part-of: victoria-logs
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: cloudflared
+          image: {{ .Values.cloudflared.image }}
+          imagePullPolicy: {{ .Values.cloudflared.imagePullPolicy }}
+          # The pinned image entrypoint already supplies --no-autoupdate.
+          args:
+            - tunnel
+            - --metrics
+            - 0.0.0.0:{{ .Values.cloudflared.metricsPort }}
+            - run
+            - --token-file
+            - /run/secrets/tunnel_token
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.cloudflared.metricsPort }}
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: metrics
+            failureThreshold: 3
+            periodSeconds: 5
+            timeoutSeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /ready
+              port: metrics
+            failureThreshold: 3
+            periodSeconds: 30
+            timeoutSeconds: 2
+          resources:
+{{ toYaml .Values.cloudflared.resources | nindent 12 }}
+          volumeMounts:
+            - name: tunnel-token
+              mountPath: /run/secrets
+              readOnly: true
+      volumes:
+        - name: tunnel-token
+          secret:
+            secretName: {{ .Values.cloudflared.tokenSecretName }}
+            items:
+              - key: tunnel_token
+                path: tunnel_token
+{{- include "victoria-logs-stack.scheduling" . | nindent 6 }}
+{{- end }}

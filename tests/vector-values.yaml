@@ -1,0 +1,23 @@
+scheduling:
+  nodeSelector:
+    kubernetes.io/hostname: vector-test
+
+vector:
+  enabled: true
+  config:
+    data_dir: /var/lib/vector
+    api:
+      enabled: true
+      address: 0.0.0.0:8687
+    sources:
+      ingress:
+        type: http_server
+        address: 0.0.0.0:8686
+    sinks:
+      victorialogs:
+        type: http
+        inputs:
+          - ingress
+        uri: http://victoria-logs:9428/insert/jsonline
+        encoding:
+          codec: json
