@@ -90,6 +90,11 @@ spec:
               mountPath: /etc/vector/vector.yaml
               subPath: vector.yaml
               readOnly: true
+{{- if .Values.vector.secret.name }}
+            - name: secret
+              mountPath: {{ .Values.vector.secret.mountPath | quote }}
+              readOnly: true
+{{- end }}
             - name: data
               mountPath: /var/lib/vector
             - name: tmp
@@ -98,6 +103,11 @@ spec:
         - name: config
           configMap:
             name: vector-config
+{{- if .Values.vector.secret.name }}
+        - name: secret
+          secret:
+            secretName: {{ .Values.vector.secret.name | quote }}
+{{- end }}
         - name: data
           emptyDir: {}
         - name: tmp

@@ -7,7 +7,8 @@ The chart provides:
 
 - A single-node VictoriaLogs StatefulSet with retained local storage.
 - A cloudflared connector.
-- Optional Vector and vmauth ingress Deployments.
+- Optional Vector and vmauth ingress Deployments. Vector can mount a
+  deployment-owned Secret for its directory secret provider.
 - Temporary migration-only NodePort and PVC helper resources.
 
 Deployment repositories own their namespaces, image pins, component
@@ -26,8 +27,8 @@ make package
 Update the version in `Chart.yaml`, commit it, and push an exactly matching tag:
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.1.1
+git push origin v0.1.1
 ```
 
 The tag-triggered GitHub Actions workflow validates the chart and migration

@@ -4,6 +4,9 @@ scheduling:
 
 vector:
   enabled: true
+  secret:
+    name: vector-secret
+    mountPath: /run/secrets
   config:
     data_dir: /var/lib/vector
     api:

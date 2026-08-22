@@ -12,12 +12,16 @@ chart-version:
 lint:
 	$(HELM) lint $(CHART_DIR)
 	$(HELM) lint $(CHART_DIR) -f tests/vector-values.yaml
+	$(HELM) lint $(CHART_DIR) -f tests/vector-values.yaml \
+		--set-string vector.secret.name=
 	$(HELM) lint $(CHART_DIR) -f tests/vmauth-values.yaml
 
 .PHONY: template
 template:
 	$(HELM) template vector $(CHART_DIR) -n vector-test \
 		-f tests/vector-values.yaml >/dev/null
+	$(HELM) template vector-no-secret $(CHART_DIR) -n vector-test \
+		-f tests/vector-values.yaml --set-string vector.secret.name= >/dev/null
 	$(HELM) template vmauth $(CHART_DIR) -n vmauth-test \
 		-f tests/vmauth-values.yaml >/dev/null
 

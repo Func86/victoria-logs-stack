@@ -42,10 +42,18 @@
     },
     "vector": {
       "type": "object",
-      "required": ["enabled", "image", "config"],
+      "required": ["enabled", "image", "secret", "config"],
       "properties": {
         "enabled": {"type": "boolean"},
         "image": {"type": "string", "minLength": 1},
+        "secret": {
+          "type": "object",
+          "required": ["name", "mountPath"],
+          "properties": {
+            "name": {"type": "string"},
+            "mountPath": {"type": "string", "minLength": 1}
+          }
+        },
         "config": {"type": "object"}
       }
     },

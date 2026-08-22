@@ -23,6 +23,9 @@ vector:
     port: 8686
   apiPort: 8687
   resources: {}
+  secret:
+    name: ""
+    mountPath: /run/secrets
   config: {}
 
 vmauth:
